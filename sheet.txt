@@ -1,0 +1,75 @@
+import streamlit as st
+import pandas as pd
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+sheet_url = "https://docs.google.com/spreadsheets/d/1zs_jjSotWm0Xb09NfVzamGEpzJkX-Gw1FEKBNtuju_0/edit?usp=sharing"
+csv_export_url = sheet_url.replace('/edit?usp=sharing', '/gviz/tq?tqx=out:csv')
+
+def get_data(url):
+    return pd.read_csv(url)
+
+def add_data_to_sheet(data):
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds = ServiceAccountCredentials.from_json_keyfile_name("YOUR_SERVICE_ACCOUNT_JSON_FILE.json", scope)
+    client = gspread.authorize(creds)
+    sheet = client.open_by_url(sheet_url).sheet1
+    sheet.append_row(data)
+
+st.set_page_config(
+    page_title="My_Google_Sheet ",
+    page_icon="📈📉",
+    layout="wide",
+)
+st.markdown("""
+    <style>
+        .main {
+            background-color: #000000;
+            color: #FFFFFF;
+        }
+        h1, h2 {
+            color: #FFD700;
+        }
+        .stButton button {
+            background-color: #FFD700;
+            color: #000000;
+        }
+        .stTextInput input {
+            border: 2px solid #FFD700;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #333333;
+            color: white;
+        }
+        .stDataFrame {
+            background-color: white;
+            color: black;
+        }
+        .css-1cpxqw2 a {
+            color: #FFD700;
+        }
+    </style>
+""", unsafe_allow_html=True)
+st.title("📈 My_Google Sheet 📉 ")
+st.header("⬇ My_Data ⬇")
+data = get_data(csv_export_url)
+st.dataframe(data, width=1000, height=400)
+st.header("➕ Add_New_Data")
+with st.form(key='add_data_form'):
+    new_data = {}
+    columns = data.columns
+    for column in columns:
+        new_data[column] = st.text_input(f"Enter {column}", "")
+
+    submit_button = st.form_submit_button(label='Add Data')
+
+if submit_button:
+    if any(new_data.values()):
+        add_data_to_sheet(list(new_data.values()))
+        st.success("Data added successfully!")
+    else:
+        st.error("Please fill in at least one field.")
+data = get_data(csv_export_url)
+st.header(" Updated Data 📄")
+st.dataframe(data, width=1000, height=400)
+
+#ARMAN_ESNAASHARI
